@@ -28,9 +28,9 @@ namespace spaar
 
         internal static Configuration Configuration { get; set; }
 
-         private void Start()
+        void Start()
         {
-            var stats = ModLoaderStats.Instance;
+            ModLoaderStats stats = ModLoaderStats.Instance;
             if (stats.WasLoaded)
             {
                 return;
@@ -38,35 +38,31 @@ namespace spaar
 
             AddPiece = null;
 
-            //KeyManager.LoadKeys();
+            Configuration = Configuration.LoadOrCreateDefault(Configuration.CONFIG_FILE_NAME);
+            Keys.LoadKeys();
+
+            var modObject = new GameObject("MODLOADERLORD");
             modObject.AddComponent<DontDestroyOnLoady>();
             modObject.AddComponent<Console>();
             modObject.AddComponent<KeySettings>();
+            observer = modObject.AddComponent<GameObserver>();
 #if DEV_BUILD
             modObject.AddComponent<ObjectExplorer>();
 #endif
-            observer = modObject.AddComponent<GameObserver>();
             stats.WasLoaded = true;
 
-            var files = (new DirectoryInfo(Application.dataPath + "/Mods")).GetFiles("*.dll");
-            SearchAttributes(files);
-        }
-
-        public void SearchAttributes(FileInfo[] Fileinfo)
-        {
-            foreach (var fileInfo in Fileinfo)
+            FileInfo[] files = (new DirectoryInfo(Application.dataPath + "/Mods")).GetFiles("*.dll");
+            foreach (FileInfo fileInfo in files)
             {
-                if (!fileInfo.Name.EndsWith(".no.dll") && fileInfo.Name != "SpaarModLoader.dll" &&
-                    fileInfo.Name != "Mono.Reflection.dll"
-                    && fileInfo.Name != "Mono.Cecil.dll")
+                if (!fileInfo.Name.EndsWith(".no.dll") && fileInfo.Name != "SpaarModLoader.dll")
                 {
                     Debug.Log("Trying to load " + fileInfo.FullName);
                     try
                     {
-                        var assembly = Assembly.LoadFrom(fileInfo.FullName);
+                        Assembly assembly = Assembly.LoadFrom(fileInfo.FullName);
                         var types = assembly.GetTypes();
 
-                        var foundAttrib = false;
+                        bool foundAttrib = false;
 
                         foreach (var type in types)
                         {
@@ -98,7 +94,7 @@ namespace spaar
                     }
                     catch (Exception exception)
                     {
-                        Debug.Log("Could not load mod " + fileInfo.Name + ":");
+                        Debug.Log("Could not load " + fileInfo.Name + ":");
                         Debug.LogException(exception);
                     }
                 }
